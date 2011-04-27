@@ -9,13 +9,13 @@ from StringIO import StringIO
 def rgba_image_to_svg(im):
     s = StringIO()
     s.write("""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg>\n""")
+<svg width="%d" height="%d">\n""" % im.size)
 
     width, height = im.size
     for x in range(width):
         for y in range(height):
             rgba = im.getpixel((x, y))
-            s.write("""  <rect x="%d" y="%d" width="1" height="1" style="fill:rgb%s; fill-opacity:%f; stroke:none;" />\n""" % (x, y, rgba[0:3], float(rgba[3])))
+            s.write("""  <rect x="%d" y="%d" width="1" height="1" style="fill:rgb%s; fill-opacity:%.3f; stroke:none;" />\n""" % (x, y, rgba[0:3], float(rgba[3])/255))
     s.write("""</svg>\n""")
     return s.getvalue()
 
