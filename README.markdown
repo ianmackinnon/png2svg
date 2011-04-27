@@ -1,6 +1,6 @@
 # png2svg
 
-Converts PNG images to SVG. 
+Converts PNG images to SVG.
 
 ## Usage
 
