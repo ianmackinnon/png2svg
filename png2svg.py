@@ -39,11 +39,17 @@ def normalize(a):
     
                            
 
+def svg_header(width, height):
+    return """<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" 
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="%d" height="%d"
+     xmlns="http://www.w3.org/2000/svg" version="1.1">
+""" % (width, height)
 
 def rgba_image_to_svg_pixels(im):
     s = StringIO()
-    s.write("""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="%d" height="%d">\n""" % im.size)
+    s.write(svg_header(*im.size))
 
     width, height = im.size
     for x in range(width):
@@ -173,8 +179,7 @@ def rgba_image_to_svg_contiguous(im):
             color_joined_pieces[color].append(joined_edges(assorted_edges))
 
     s = StringIO()
-    s.write("""<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="%d" height="%d">\n""" % im.size)
+    s.write(svg_header(*im.size))
 
     for color, shapes in color_joined_pieces.items():
         for shape in shapes:
