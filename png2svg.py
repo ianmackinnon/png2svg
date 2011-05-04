@@ -47,7 +47,7 @@ def svg_header(width, height):
      xmlns="http://www.w3.org/2000/svg" version="1.1">
 """ % (width, height)
 
-def rgba_image_to_svg_pixels(im):
+def rgba_image_to_svg_pixels(im, opaque=None):
     s = StringIO()
     s.write(svg_header(*im.size))
 
@@ -56,6 +56,8 @@ def rgba_image_to_svg_pixels(im):
         for y in range(height):
             here = (x, y)
             rgba = im.getpixel(here)
+            if opaque and not rgba[3]:
+                continue
             s.write("""  <rect x="%d" y="%d" width="1" height="1" style="fill:rgb%s; fill-opacity:%.3f; stroke:none;" />\n""" % (x, y, rgba[0:3], float(rgba[3]) / 255))
     s.write("""</svg>\n""")
     return s.getvalue()
@@ -98,7 +100,7 @@ def joined_edges(assorted_edges):
     return pieces
 
 
-def rgba_image_to_svg_contiguous(im):
+def rgba_image_to_svg_contiguous(im, opaque=None):
 
     # collect contiguous pixel groups
     
@@ -114,6 +116,8 @@ def rgba_image_to_svg_contiguous(im):
             if visited.getpixel(here):
                 continue
             rgba = im.getpixel((x, y))
+            if opaque and not rgba[3]:
+                continue
             piece = []
             queue = [here]
             visited.putpixel(here, 1)
@@ -200,7 +204,7 @@ def rgba_image_to_svg_contiguous(im):
         
 
 
-def png_to_svg(filename, contiguous=False):
+def png_to_svg(filename, contiguous=None, opaque=None):
     try:
         im = Image.open(filename)
     except IOError, e:
@@ -209,17 +213,18 @@ def png_to_svg(filename, contiguous=False):
     im_rgba = im.convert('RGBA')
     
     if contiguous:
-        return rgba_image_to_svg_contiguous(im_rgba)
+        return rgba_image_to_svg_contiguous(im_rgba, opaque)
     else:
-        return rgba_image_to_svg_pixels(im_rgba)
+        return rgba_image_to_svg_pixels(im_rgba, opaque)
     
 
 
 if __name__ == "__main__":
     parser = OptionParser()
-    parser.add_option("-p", "--pixels", action="store_false", dest="contiguous", help="Generate a separate shape for each pixel; do not group pixels into contiguous areas of the same colour", default=True)
     parser.add_option("-v", "--verbose", action="store_true", dest="verbosity", help="Print verbose information for debugging", default=None)
     parser.add_option("-q", "--quiet", action="store_false", dest="verbosity", help="Suppress warnings", default=None)
+    parser.add_option("-p", "--pixels", action="store_false", dest="contiguous", help="Generate a separate shape for each pixel; do not group pixels into contiguous areas of the same colour", default=True)
+    parser.add_option("-o", "--opaque", action="store_true", dest="opaque", help="Opaque only; do not create shapes for fully transparent pixels. ", default=None)
     
     (options, args) = parser.parse_args()
     
@@ -229,4 +234,4 @@ if __name__ == "__main__":
         log.setLevel(logging.ERROR)
 
     assert len(args) == 1, "Usage: %s [FILE]"
-    print png_to_svg(args[0], contiguous=options.contiguous)
+    print png_to_svg(args[0], contiguous=options.contiguous, opaque=options.opaque)
