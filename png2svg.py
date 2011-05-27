@@ -63,7 +63,7 @@ def rgba_image_to_svg_pixels(im, opaque=None):
     return s.getvalue()
 
 
-def joined_edges(assorted_edges):
+def joined_edges(assorted_edges, keep_every_point=False):
     pieces = []
     piece = []
     directions = deque([
@@ -83,13 +83,13 @@ def joined_edges(assorted_edges):
             next_edge = (piece[-1][1], next_end)
             if next_edge in assorted_edges:
                 assorted_edges.remove(next_edge)
-                if i == 2:
+                if i == 2 and not keep_every_point:
                     # same direction
                     piece[-1] = (piece[-1][0], next_edge[1])
                 else:
                     piece.append(next_edge)
                 if piece[0][0] == piece[-1][1]:
-                    if normalize(direction(piece[0])) == normalize(direction(piece[-1])):
+                    if not keep_every_point and normalize(direction(piece[0])) == normalize(direction(piece[-1])):
                         piece[-1] = (piece[-1][0], piece.pop(0)[1])
                         # same direction
                     pieces.append(piece)
@@ -100,7 +100,7 @@ def joined_edges(assorted_edges):
     return pieces
 
 
-def rgba_image_to_svg_contiguous(im, opaque=None):
+def rgba_image_to_svg_contiguous(im, opaque=None, keep_every_point=False):
 
     # collect contiguous pixel groups
     
@@ -180,7 +180,7 @@ def rgba_image_to_svg_contiguous(im, opaque=None):
     for color, pieces in color_edge_lists.items():
         color_joined_pieces[color] = []
         for assorted_edges in pieces:
-            color_joined_pieces[color].append(joined_edges(assorted_edges))
+            color_joined_pieces[color].append(joined_edges(assorted_edges, keep_every_point))
 
     s = StringIO()
     s.write(svg_header(*im.size))
@@ -204,7 +204,7 @@ def rgba_image_to_svg_contiguous(im, opaque=None):
         
 
 
-def png_to_svg(filename, contiguous=None, opaque=None):
+def png_to_svg(filename, contiguous=None, opaque=None, keep_every_point=None):
     try:
         im = Image.open(filename)
     except IOError, e:
@@ -213,7 +213,7 @@ def png_to_svg(filename, contiguous=None, opaque=None):
     im_rgba = im.convert('RGBA')
     
     if contiguous:
-        return rgba_image_to_svg_contiguous(im_rgba, opaque)
+        return rgba_image_to_svg_contiguous(im_rgba, opaque, keep_every_point)
     else:
         return rgba_image_to_svg_pixels(im_rgba, opaque)
     
@@ -225,6 +225,7 @@ if __name__ == "__main__":
     parser.add_option("-q", "--quiet", action="store_false", dest="verbosity", help="Suppress warnings", default=None)
     parser.add_option("-p", "--pixels", action="store_false", dest="contiguous", help="Generate a separate shape for each pixel; do not group pixels into contiguous areas of the same colour", default=True)
     parser.add_option("-o", "--opaque", action="store_true", dest="opaque", help="Opaque only; do not create shapes for fully transparent pixels. ", default=None)
+    parser.add_option("-1", "--one", action="store_true", dest="keep_every_point", help="1-pixel-width edges on contiguous shapes; default is to remove intermediate points on straight line edges. ", default=None)
     
     (options, args) = parser.parse_args()
     
@@ -234,4 +235,4 @@ if __name__ == "__main__":
         log.setLevel(logging.ERROR)
 
     assert len(args) == 1, "Usage: %s [FILE]"
-    print png_to_svg(args[0], contiguous=options.contiguous, opaque=options.opaque)
+    print png_to_svg(args[0], contiguous=options.contiguous, opaque=options.opaque, keep_every_point=options.keep_every_point)
